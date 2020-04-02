@@ -111,10 +111,10 @@ func Apply(update io.Reader, opts Options) error {
 	if err != nil {
 		return err
 	}
-	defer fp.Close()
 
 	_, err = io.Copy(fp, bytes.NewReader(newBytes))
 	if err != nil {
+		fp.Close()
 		return err
 	}
 
@@ -137,6 +137,7 @@ func Apply(update io.Reader, opts Options) error {
 	// move the existing executable to a new file in the same directory
 	err = os.Rename(opts.TargetPath, oldPath)
 	if err != nil {
+		fmt.Println("run os backup", opts.TargetPath, oldPath)
 		return err
 	}
 
@@ -144,6 +145,7 @@ func Apply(update io.Reader, opts Options) error {
 	err = os.Rename(newPath, opts.TargetPath)
 
 	if err != nil {
+		fmt.Println("update os", newPath, opts.TargetPath)
 		// move unsuccessful
 		//
 		// The filesystem is now in a bad state. We have successfully
@@ -153,6 +155,7 @@ func Apply(update io.Reader, opts Options) error {
 		// Try to rollback by restoring the old binary to its original path.
 		rerr := os.Rename(oldPath, opts.TargetPath)
 		if rerr != nil {
+			fmt.Println("os restore", oldPath, opts.TargetPath)
 			return &rollbackErr{err, rerr}
 		}
 
